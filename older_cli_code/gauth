@@ -3,6 +3,23 @@ require 'keychain'
 require 'clipboard'
 require 'rotp'
 
+#query_user_for_provider_and_account
+# @return [Boolean,] true if we selected an account. False if we cancelled.
+def query_user_for_provider_and_account
+  output = []
+  Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|
+    output << p
+  end
+  output.sort_by! { |p| [p.label, p.account] }
+  list = []
+  output.each { |p| list << "#{p.label} #{p.account}" }
+
+  #Selection menu using Applescript.
+  key = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to set keyList to {"#{list.join('","')}"}' -e 'tell application "System Events" to return ( choose from list keyList with title "keys" )'`
+  
+  return $? == 0 ? [true] + key.split(' ') : [false, '', '']
+end
+
 #Read back the specified google authenticator key from the Mac OS X keychain.
 #  If the account is unique, then only one argument is needed.
 #  If not, then both the provider name and the account must be passed in as arguments.
@@ -28,6 +45,14 @@ when 2;
     puts "#{p.label}:#{p.account}: #{result}"
   end
 else
-  puts "Usage: gauth <optional-provider> account"
-  exit 1
+  selected, provider, account = query_user_for_provider_and_account
+  if selected
+    Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => provider).all.each do |p|
+      totp = ROTP::TOTP.new( p.password )
+      result = totp.now
+      Clipboard.copy  result
+      puts "#{p.label}:#{p.account}: #{result}"
+      break
+    end
+  end
 end
