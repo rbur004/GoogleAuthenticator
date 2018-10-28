@@ -4,25 +4,26 @@
 
 ## DESCRIPTION:
 
-  All these equire the user password to access the Mac OS X keychain.
+  All these require the user password to access the Mac OS X keychain.
   
-  gauth inserts the latest google authenticator key into the clipboard, for the provider and account specified as arguments.
-  gauth_auto inserts the latest google authenticator key into the clipboard, for the provider and account specified in ~/.gauth.
-  gauth_config creates Mac OS X keychain entries for the provider, account and key specified as arguments.
-
-  gauth_menu.rb is a Platypus script to create a Mac OS X menu, which shows all the current keys stored in the keychain.
+  * gauth_menu.rb is a Platypus script to create a Mac OS X menu, which shows all the current keys stored in the keychain.
   Injects the latest google authenticator key into the keyboard buffer (i.e. it looks like it was typed), for the provider and account selected.
   Can scan Google Authenticator QRCodes, and store the provider, account and key in the Mac OS X keychain.
   Can also accept manual entry of the provider, account and key in a dialog box. 
   This must be in the form of otpauth://totp/user@site?secret=KEY_STRING&issuer=Provider_name (with no spaces)
 
-  ruby-setup.sh installs the gems, and copies the GauthMenu.app application (created by Platypus from the gauth_menu.rb script) into Utilities, and adds this as a startup item for the user.
+  * installer/ruby-setup.sh installs the gems, and copies the GauthMenu.app application (created by Platypus from the gauth_menu.rb script) into Utilities, and adds this as a startup item for the user.
  
-### Under Experimental:
+### Older CLI code:
 
-  create_qr_code.rb reads google authenticator keys from the Mac OS X keychain, and the user can select one to print as a QRCode. Requires the user password to access the keychain.
-  
-  read_all_keys.rb reads google authenticator keys from the Mac OS X keychain, and prints them to standard out. Requires the user password to access the keychain.
+  * gauth inserts the latest google authenticator key into the clipboard, for the provider and account specified as arguments.
+  * gauth_auto inserts the latest google authenticator key into the clipboard, for the provider and account specified in ~/.gauth.
+  * gauth_config creates Mac OS X keychain entries for the provider, account and key specified as arguments.
+
+### Experimental:
+
+  * create_qr_code.rb reads google authenticator keys from the Mac OS X keychain, and the user can select one to print as a QRCode. Requires the user password to access the keychain.
+  * read_all_keys.rb reads google authenticator keys from the Mac OS X keychain, and prints them to standard out. Requires the user password to access the keychain.
  
 ## FEATURES/PROBLEMS:
 
