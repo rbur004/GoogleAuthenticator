@@ -44,9 +44,9 @@ def query_user_for_provider_and_account
   output.each { |p| list << "#{p.label} #{p.account}" }
 
   #Selection menu using Applescript.
-  key = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to set keyList to {"#{list.join('","')}"}' -e 'tell application "System Events" to return ( choose from list keyList with title "keys" )'`
+  key = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to set keyList to {"#{list.join('","')}"}' -e 'tell application "System Events" to return ( choose from list keyList with title "keys" )'`.chomp
   
-  return $? == 0 ? [true] + key.split(' ') : [false, '', '']
+  return key == 'false' ? [false, '', ''] : [true] + key.split(' ') 
 end
 
 selected, provider, account = query_user_for_provider_and_account
