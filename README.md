@@ -58,7 +58,7 @@ From ruby-setup.sh, which will do the following, and copy GauthMenu to Utilities
 
 (The MIT License)
 
-Copyright (c) 2016
+Copyright (c) 2016 Rob Burrowes
 
 1. You may make and give away verbatim copies of the source form of the
    software without restriction, provided that you duplicate all of the
