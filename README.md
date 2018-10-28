@@ -40,8 +40,11 @@ Google Authenticator menu item for Mac OS X.
 	
 ## INSTALL:
 
-	* Mac OS X GauthMenu application is in the repository.
-	*          Scan QRCode app is also in the repository. It isn't needed with GauthMenu
+	* Mac OS X GauthMenu.app application is in the repository.
+	
+Older, and not needed with GauthMenu.app
+	*          Scan QRCode.app is also in the repository. 
+	*          GoogleAuthenticator.app Runs and closes, leaving default provider accounts one time key in the clipboard.
 	
 From ruby-setup.sh, which will do the following, and copy GauthMenu to Utilities and add it as a login item.
 	* sudo gem install rotp
