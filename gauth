@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+require 'keychain'
+require 'clipboard'
+require 'rotp'
+
+#Read back the specified google authenticator key from the Mac OS X keychain.
+#  If the account is unique, then only one argument is needed.
+#  If not, then both the provider name and the account must be passed in as arguments.
+#  (Will get prompted for the users password to access the keychain.)
+#The default provider and account pair is stored in the users home directory in .gauth.
+#Generate the next 2FA key, and put it in the Mac OS X clipboard.
+
+case ARGV.length 
+when 1; 
+  account = ARGV[0] 
+  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account).all.each do |p|
+    totp = ROTP::TOTP.new( p.password )
+    result = totp.now
+    Clipboard.copy  result
+    puts "#{p.label}:#{p.account}: #{result}"
+  end
+when 2; 
+  account = ARGV[1] ; label = ARGV[0]
+  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => label).all.each do |p|
+    totp = ROTP::TOTP.new( p.password )
+    result = totp.now
+    Clipboard.copy  result
+    puts "#{p.label}:#{p.account}: #{result}"
+  end
+else
+  puts "Usage: gauth <optional-provider> account"
+  exit 1
+end

@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+require 'keychain'
+
+#Store a google authentication key in the Mac OS X keychain.  
+#Provide the provider name, account at that provider, and the rotp password as arguments.
+#  Will get prompted for local account password by Mac OS X to access the keychain.
+
+if ARGC != 3
+  puts "Usage: gauth_config provider account key"
+  exit 1
+end
+begin
+  Keychain.generic_passwords.create(:service => 'Google_Authenticator', 
+  																	:password => ARGV[2], 
+  																	:account => ARGV[1], 
+  																	:label => ARGV[0])
+rescue Excepton => error
+  puts "Failed to create keychain entry: #{error}"
+end
+
+

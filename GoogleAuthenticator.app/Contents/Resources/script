@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+require 'keychain'
+require 'clipboard'
+require 'rotp'
+require 'wikk_configuration'
+
+conf = WIKK::Configuration.new(File.expand_path("~/.gauth"))
+Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => conf.account, :label => conf.label).all.each do |p|
+  totp = ROTP::TOTP.new( p.password )
+  result = totp.now
+  Clipboard.copy  result
+  puts "#{p.label}:#{p.account}: #{result}"
+end
