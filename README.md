@@ -40,7 +40,7 @@ Google Authenticator menu item for Mac OS X.
 	
 ## INSTALL:
 
-	* Mac OS X GauthMenu.app application is in the repository.
+	* Mac OS X GauthMenu.app application is in the repository, and is the only bit I now use.
 	
 Older, and not needed with GauthMenu.app
 	*          Scan QRCode.app is also in the repository. 
