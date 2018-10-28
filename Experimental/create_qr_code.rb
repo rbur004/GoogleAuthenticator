@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/bin/ruby
 require 'keychain'
 require 'rqrcode'
 
@@ -32,23 +32,30 @@ def create_qrcode(account: 'user@somewhere.com', issuer: 'Company-Name', secret:
 end
 
 
-#Read the google authenticator keys from the keychain.
-output = []
-Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|
-  output << p
+#query_user_for_provider_and_account
+# @return [Boolean,] true if we selected an account. False if we cancelled.
+def query_user_for_provider_and_account
+  output = []
+  Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|
+    output << p
+  end
+  output.sort_by! { |p| [p.label, p.account] }
+  list = []
+  output.each { |p| list << "#{p.label} #{p.account}" }
+
+  #Selection menu using Applescript.
+  key = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to set keyList to {"#{list.join('","')}"}' -e 'tell application "System Events" to return ( choose from list keyList with title "keys" )'`
+  
+  return $? == 0 ? [true] + key.split(' ') : [false, '', '']
 end
-output.sort_by! { |p| [p.label, p.account] }
-list = []
-output.each { |p| list << "#{p.label} #{p.account}" }
 
-#Selection menu using Applescript.
-key = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to set keyList to {"#{list.join('","')}"}' -e 'tell application "System Events" to return ( choose from list keyList with title "keys" )'`
-
+selected, provider, account = query_user_for_provider_and_account
 #If we didn't cancel, then create the QRCode png file.
-if $? == 0
-  label, account = key.split(' ')
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => label).all.each do |p|
-    create_qrcode(account: account, issuer: label, secret: p.password)
+if selected
+  #Read the google authenticator keys from the keychain.
+  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => provider).all.each do |p|
+    create_qrcode(account: account, issuer: provider, secret: p.password)
+    break
   end
 end
 
