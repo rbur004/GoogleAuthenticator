@@ -16,7 +16,7 @@
  
 ### Older CLI code:
 
-  * gauth inserts the latest google authenticator key into the clipboard, for the provider and account specified as arguments.
+  * gauth inserts the latest google authenticator key into the clipboard, for the provider and account specified as arguments (with no args, prompts the user for the provider and account).
   * gauth_auto inserts the latest google authenticator key into the clipboard, for the provider and account specified in ~/.gauth.
   * gauth_config creates Mac OS X keychain entries for the provider, account and key specified as arguments.
   * gauth_scan_qr_code.rb reads QRCodes, injecting the provider,account and key into the keychain.
