@@ -46,6 +46,10 @@ def save_key(issuer:, account:, key:)
   end
 end
 
+#Ask if the user wants to make this the default key
+#The default is used by the GoogleAuthenticator app, which asks for no input.
+# @param issuer [String] Google authenticator key's issuer (From the QRCode)
+# @param account [String] Google authenticator key's user account name (from the QRcode)
 def make_default_key(issuer:, account:)
   action = `osascript -e 'tell app "System Events" to return button returned of ( display dialog "Make this account the default" buttons {"No", "Yes"} default button 1 with title "GoogleAuthenticator")'`.strip
   if action == 'Yes'
@@ -60,6 +64,7 @@ EOF
   end
 end
 
+#Read Google authenticator key from a QRCode and save the resulting issure, user and key into the Apple keystore.
 def scan_qcode
   filename = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to return POSIX path of (choose file with prompt "select an image file ")'`.chomp
   if filename != nil && filename != ''
@@ -75,32 +80,55 @@ def scan_qcode
       puts "Couldn't find code in image: #{error}"
       exit 1
     end
-    #Google qrcode example otpauth://totp/Google%3Arbur004%40gmail.com?secret=ABCDEFGHIJKLMNOP&issuer=Google
-    #UoA qrcode example otpauth://totp/rbur004@prod?secret=ABCDEFGHIJKLMNOP&issuer=The+University+of+Auckland
-    #NeSI one mixes up the fields and adds additional fields
-#otpauth://totp/rbur004@NESI.ORG.NZ:rbur004?digits=6&secret=ABCDEFGHIJKLMNOP&period=30&algorithm=SHA1&issuer=rbur004@NESI.ORG.NZ
     
     puts text
-    text.gsub(/^otpauth:\/\/totp\/(.*:)?(.*)\?.*secret=(.*)&.*issuer=(.*)$/, '' )
-    save_key(issuer: $4, account: $2, key: $3)
+    arguments = parse_otpauth(uri: text)
+    save_key(issuer: arguments['issuer'], account: arguments['user'], key: arguments['secret'])
     make_default_key(issuer: $4, account: $2)
   end
 end
 
+#Read the Google Authenticator key details from a dialog box, rather than a QRcode. Save these into the Apple keystore
 def read_qrcode
   text = `osascript -e 'tell application "System Events"' -e 'text returned of (display dialog "Enter QCode Text" default answer "otpauth://totp/Us?secret=ABCDEFGHIJKLMNOP&issuer=Them" buttons {"Cancel","OK"} default button 2 with title "$(basename $0)")' -e 'end tell'`.chomp
   if $? == 0 #Then button used was OK
-    text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?.*secret=(.*)&.*issuer=(.*)$/, '' )
-    save_key(issuer: $4, account: $2, key: $3)
+    arguments = parse_otpauth(uri: text)
+    save_key(issuer: arguments['issuer'], account: arguments['user'], key: arguments['secret'])
     make_default_key(issuer: $4, account: $2)
   end
 end
 
+#Insert the text into the keyboard buffer, so it looks as if we typed it.
+# text [String] text we want to 'type' on the keyboard.
 def output(text:)
   `osascript -e 'tell application "System Events"' -e 'set activeApp to name of first application process whose frontmost is true' -e 'if "Finder" is not in activeApp then' -e 'tell application activeApp' -e 'keystroke "#{text}"' -e 'end tell' -e 'end if' -e 'end tell'`
 end
 
-# If 0 arguments, we show menu
+#Parse an atpauth:// URI string to extract the arguments from it
+#
+#Google qrcode example otpauth://totp/Google%3Arbur004%40gmail.com?secret=ABCDEFGHIJKLMNOP&issuer=Google
+#UoA qrcode example otpauth://totp/rbur004@prod?secret=ABCDEFGHIJKLMNOP&issuer=The+University+of+Auckland
+#NeSI one mixes up the fields and adds additional fields
+#otpauth://totp/rbur004@NESI.ORG.NZ:rbur004?digits=6&secret=ABCDEFGHIJKLMNOP&period=30&algorithm=SHA1&issuer=rbur004@NESI.ORG.NZ
+#
+# @param uri [String] otpauth URI string
+# @return otp auth arguments as a hash
+def parse_otpauth(uri:)
+  arguments = {}
+  first_split = uri.split('/')
+  #first_split[0] would be 'otpauth:', [1] would be '', [2] would be org and user and the arguments
+  second_split = first_split[3].split('?') 
+  #Second split [0] would be the org and user, [1] would be the arguments
+  arguments['user'] = second_split[0].split(':')[-1] #Last entry should be the user. There might not be an org in the URI
+  second_split[1].split('&').each do |a| #Other arguments are after the '?'
+    key,value = a.split('=')
+    arguments[key] = value
+  end
+  return arguments
+end
+
+# If 0 arguments, we show menu.
+# Otherwise we lookup the google authenitcator key from the apple keystore and generate a one time code, inserting it into the key buffer.
 if ARGV.length == 0
   output = []
   Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|

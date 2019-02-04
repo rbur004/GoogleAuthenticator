@@ -69,6 +69,22 @@ EOF
   end
 end
 
+#Parse an atpauth:// URI string to extract the arguments from it
+# @return otp auth arguments as a hash
+def parse_otpauth(uri:)
+  arguments = {}
+  first_split = uri.split('/')
+  #first_split[0] would be 'otpauth:', [1] would be '', [2] would be org and user and the arguments
+  second_split = first_split[3].split('?') 
+  #Second split [0] would be the org and user, [1] would be the arguments
+  arguments['user'] = second_split[0].split(':')[-1] #Last entry should be the user. There might not be an org in the URI
+  second_split[1].split('&').each do |a| #Other arguments are after the '?'
+    key,value = a.split('=')
+    arguments[key] = value
+  end
+  return arguments
+end
+
 #Use Applescript to let user select the QRCode image to scan.
 filename = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to return POSIX path of (choose file with prompt "select an image file ")'`.chomp
 if filename != nil && filename != ''
@@ -84,7 +100,8 @@ if filename != nil && filename != ''
   end
   #Google qrcode example otpauth://totp/Google%3Arbur004%40gmail.com?secret=ABCDEFGHIJKLMNOP&issuer=Google
   puts text
-  text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?.*secret=(.*)&.*issuer=(.*)$/, '' )
-  save_key(issuer: $4, account: $2, key: $3)
-  #make_default_key(issuer: $4, account: $2)
+  arguments = parse_otpauth(uri: text)
+  puts "issuer: #{arguments['issuer']}, account: #{arguments['user']}, key: #{arguments['secret']}"
+  save_key(issuer: arguments['issuer'], account: arguments['user'], key: arguments['secret'])
+  #make_default_key(issuer: arguments['issuer'], account: rguments['user'])
 end
