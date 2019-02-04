@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/bin/ruby
 require 'keychain'
 
 #Test, by reading it back keys. Will get prompted for local account password by Mac OS X.

@@ -83,7 +83,8 @@ if filename != nil && filename != ''
     exit 1
   end
   #Google qrcode example otpauth://totp/Google%3Arbur004%40gmail.com?secret=ABCDEFGHIJKLMNOP&issuer=Google
-  text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?secret=(.*)&issuer=(.*)$/, '' )
+  puts text
+  text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?.*secret=(.*)&.*issuer=(.*)$/, '' )
   save_key(issuer: $4, account: $2, key: $3)
   #make_default_key(issuer: $4, account: $2)
 end

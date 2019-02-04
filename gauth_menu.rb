@@ -77,8 +77,11 @@ def scan_qcode
     end
     #Google qrcode example otpauth://totp/Google%3Arbur004%40gmail.com?secret=ABCDEFGHIJKLMNOP&issuer=Google
     #UoA qrcode example otpauth://totp/rbur004@prod?secret=ABCDEFGHIJKLMNOP&issuer=The+University+of+Auckland
+    #NeSI one mixes up the fields and adds additional fields
+#otpauth://totp/rbur004@NESI.ORG.NZ:rbur004?digits=6&secret=ABCDEFGHIJKLMNOP&period=30&algorithm=SHA1&issuer=rbur004@NESI.ORG.NZ
+    
     puts text
-    text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?secret=(.*)&issuer=(.*)$/, '' )
+    text.gsub(/^otpauth:\/\/totp\/(.*:)?(.*)\?.*secret=(.*)&.*issuer=(.*)$/, '' )
     save_key(issuer: $4, account: $2, key: $3)
     make_default_key(issuer: $4, account: $2)
   end
@@ -87,7 +90,7 @@ end
 def read_qrcode
   text = `osascript -e 'tell application "System Events"' -e 'text returned of (display dialog "Enter QCode Text" default answer "otpauth://totp/Us?secret=ABCDEFGHIJKLMNOP&issuer=Them" buttons {"Cancel","OK"} default button 2 with title "$(basename $0)")' -e 'end tell'`.chomp
   if $? == 0 #Then button used was OK
-    text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?secret=(.*)&issuer=(.*)$/, '' )
+    text.gsub( /^otpauth:\/\/totp\/(.*:)?(.*)\?.*secret=(.*)&.*issuer=(.*)$/, '' )
     save_key(issuer: $4, account: $2, key: $3)
     make_default_key(issuer: $4, account: $2)
   end
