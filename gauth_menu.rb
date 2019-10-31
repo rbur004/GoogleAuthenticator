@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/bin/ruby
 require 'keychain'
 require 'clipboard'
 require 'rotp'
@@ -25,14 +25,20 @@ end
 def save_key(issuer:, account:, key:)
   begin
   #google_authenticator = Keychain.open('googleauthenticator.keychain') #Could have private keychain
-    Keychain.generic_passwords.create(:service => 'Google_Authenticator',    #fills in where field in keychain (and name, if no label)
+  
+    #Keychain looks to be using (account,service) as it's unique key. Adding fails silently if there is a collision.
+    #Therefore, we will always ensure account is of the form account@issuer (unless account is already qualified with a domain name)
+    issuer = issuer.split('@')[1] if issuer =~ /@/      #Set issuer to the domain part, if it is in the form user@domain style
+    account = "#{account}@#{issuer}" if account !~ /@/  #Set Account to account@issuer, if the is no @ in the account string
+    
+    Keychain.generic_passwords.create(:service => 'Google Authenticator',    #fills in where field in keychain (and name, if no label)
   																	:password => key,                 #fills in name field in keychain.
   																	:account => "#{account}" ,             #fills in account field in keychain.
   																#	:comment => "#{issuer}",
   																	:label => "#{issuer}")                 #fills in name field in keychain.
   rescue Keychain::DuplicateItemError => error
     begin
-      Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => "#{account}", :label => "#{issuer}").all.each do |p|
+      Keychain.generic_passwords.where(:service => 'Google Authenticator', :account => "#{account}", :label => "#{issuer}").all.each do |p|
         p.password = key
         p.save!
       end
@@ -131,7 +137,7 @@ end
 # Otherwise we lookup the google authenitcator key from the apple keystore and generate a one time code, inserting it into the key buffer.
 if ARGV.length == 0
   output = []
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|
+  Keychain.generic_passwords.where(:service => 'Google Authenticator').all.each do |p|
     output << p
   end
   output.sort_by! { |p| [p.label, p.account] }
@@ -146,7 +152,7 @@ else #Get the key
       read_qrcode
   elsif ARGV[0] != "-------------------------------"
     label, account = ARGV[0].split(' ')
-    Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => label).all.each do |p|
+    Keychain.generic_passwords.where(:service => 'Google Authenticator', :account => account, :label => label).all.each do |p|
       totp = ROTP::TOTP.new( p.password )
       result = totp.now
       #Clipboard.copy  result
