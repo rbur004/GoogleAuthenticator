@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/local/ruby/bin/ruby
 require 'keychain'
 require 'chunky_png'
 require 'zbar'
@@ -30,14 +30,19 @@ end
 # @param key [String] This is the secret that is used to generate the one time keys.
 def save_key(issuer:, account:, key:)
   begin
-    Keychain.generic_passwords.create(:service => 'Google_Authenticator',    #fills in where field in keychain (and name, if no label)
+    #Keychain looks to be using (account,service) as it's unique key. Adding fails silently if there is a collision.
+    #Therefore, we will always ensure account is of the form account@issuer (unless account is already qualified with a domain name)
+    issuer = issuer.split('@')[1] if issuer =~ /@/      #Set issuer to the domain part, if it is in the form user@domain style
+    account = "#{account}@#{issuer}" if account !~ /@/  #Set Account to account@issuer, if the is no @ in the account string
+    
+    Keychain.generic_passwords.create(:service => 'Google Authenticator',    #fills in where field in keychain (and name, if no label)
                                     :password => key,                 #fills in name field in keychain.
                                     :account => "#{account}" ,             #fills in account field in keychain.
                                   # :comment => "#{issuer}",
                                     :label => "#{issuer}")                 #fills in name field in keychain.
   rescue Keychain::DuplicateItemError => error
     begin
-      Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => "#{account}", :label => "#{issuer}").all.each do |p|
+      Keychain.generic_passwords.where(:service => 'Google Authenticator', :account => "#{account}", :label => "#{issuer}").all.each do |p|
         p.password = key
         p.save!
       end
