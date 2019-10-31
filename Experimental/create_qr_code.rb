@@ -36,7 +36,7 @@ end
 # @return [Boolean,] true if we selected an account. False if we cancelled.
 def query_user_for_provider_and_account
   output = []
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|
+  Keychain.generic_passwords.where(:service => 'Google Authenticator').all.each do |p|
     output << p
   end
   output.sort_by! { |p| [p.label, p.account] }
@@ -53,7 +53,7 @@ selected, provider, account = query_user_for_provider_and_account
 #If we didn't cancel, then create the QRCode png file.
 if selected
   #Read the google authenticator keys from the keychain.
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => provider).all.each do |p|
+  Keychain.generic_passwords.where(:service => 'Google Authenticator', :account => account, :label => provider).all.each do |p|
     create_qrcode(account: account, issuer: provider, secret: p.password)
     break
   end
