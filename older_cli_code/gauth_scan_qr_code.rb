@@ -34,7 +34,7 @@ def save_key(issuer:, account:, key:)
     # Keychain looks to be using (account,service) as it's unique key. Adding fails silently if there is a collision.
     # Therefore, we will always ensure account is of the form account@issuer (unless account is already qualified with a domain name)
     issuer = issuer.split('@')[1] if issuer =~ /@/      # Set issuer to the domain part, if it is in the form user@domain style
-    account = "#{account}@#{issuer}" if account !~ /@/  # Set Account to account@issuer, if the is no @ in the account string
+    account = "#{account}@#{issuer}" # if account !~ /@/  # Set Account to account@issuer, even if the is no @ in the account string
 
     Keychain.generic_passwords.create(service: 'Google Authenticator', # fills in where field in keychain (and name, if no label)
                                       password: key, # fills in name field in keychain.
