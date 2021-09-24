@@ -7,6 +7,9 @@ require 'zbar'
 require 'uri'
 require 'cgi'
 
+require 'rb-scpt'
+include Appscript
+
 # Turns Colour PNG into 8bit BW Y800 string.
 # @param image [ChunckyPNG::Image]
 # @return [String] Y800 image, as a string
@@ -15,7 +18,7 @@ def png_to_y800(image)
   (0...image.height).each do |h|
     (0...image.width).each do |w|
       v = image[w, h]
-      y800 << ((((ChunkyPNG::Color.r(v) * 0.21) + (ChunkyPNG::Color.g(v) * 0.72) + (ChunkyPNG::Color.b(v) * 0.07)).round ) & 0xFF ).chr
+      y800 << ((((ChunkyPNG::Color.r(v) * 0.21) + (ChunkyPNG::Color.g(v) * 0.72) + (ChunkyPNG::Color.b(v) * 0.07)).round ) & 0xFF).chr
     end
   end
   return y800
@@ -32,13 +35,13 @@ def save_key(issuer:, account:, key:)
 
     Keychain.generic_passwords.create(service: 'Google Authenticator', # fills in where field in keychain (and name, if no label)
                                       password: key, # fills in name field in keychain.
-                                      account: "#{account}", # fills in account field in keychain.
+                                      account: account.to_s, # fills in account field in keychain.
                                       #	:comment => "#{issuer}",
-                                      label: "#{issuer}"
+                                      label: issuer.to_s
                                      ) # fills in name field in keychain.
   rescue Keychain::DuplicateItemError => _e
     begin
-      Keychain.generic_passwords.where(service: 'Google Authenticator', account: "#{account}", label: "#{issuer}").all.each do |p|
+      Keychain.generic_passwords.where(service: 'Google Authenticator', account: account.to_s, label: issuer.to_s).all.each do |p|
         p.password = key
         p.save!
       end
@@ -81,8 +84,7 @@ def scan_qcode
     zbar_image = ZBar::Image.new
     zbar_image.set_data(ZBar::Format::Y800, y800_image, png_image.width, png_image.height)
     begin
-      text = CGI.unescape
-      zbar_image.process[0].data
+      text = CGI.unescape( zbar_image.process[0].data )
     rescue StandardError => e
       puts "Couldn't find code in image: #{e}"
       exit 1
@@ -107,10 +109,15 @@ end
 
 # Insert the text into the keyboard buffer, so it looks as if we typed it.
 # text [String] text we want to 'type' on the keyboard.
-def output(text:)
+def output_osa(text:)
   `osascript -e 'tell application "System Events"' -e 'set activeApp to name of first application process whose frontmost is true' -e 'if "Finder" is not in activeApp then' -e 'tell application activeApp' -e 'keystroke "#{text}"' -e 'end tell' -e 'end if' -e 'end tell'`
 end
 
+def output(text:)
+  se = app('System Events')
+  a = se.processes[its.frontmost.eq(true)]
+  a.keystroke(text)
+end
 # Parse an atpauth:// URI string to extract the arguments from it
 #
 # Google qrcode example otpauth://totp/Google%3Arbur004%40gmail.com?secret=ABCDEFGHIJKLMNOP&issuer=Google
@@ -120,6 +127,7 @@ end
 #
 # @param uri [String] otpauth URI string
 # @return otp auth arguments as a hash
+
 def parse_otpauth(uri:)
   arguments = {}
   first_split = uri.split('/')
@@ -155,7 +163,7 @@ elsif ARGV[0] != '-------------------------------'
   Keychain.generic_passwords.where(service: 'Google Authenticator', account: account, label: label).all.each do |p|
     totp = ROTP::TOTP.new( p.password )
     result = totp.now
-    # Clipboard.copy  result
+    Clipboard.copy( result )
     output(text: result)
   end
 end
