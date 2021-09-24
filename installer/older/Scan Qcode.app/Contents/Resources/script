@@ -3,6 +3,7 @@ require 'keychain'
 require 'chunky_png'
 require 'zbar'
 require 'uri'
+require 'cgi'
 
 #First attempt at scanning a QRCode and injecting the result into the Mac OS X keychain.
 #Created "Scan Qcode.app" from this script, using Platypus.
@@ -100,7 +101,7 @@ if filename != nil && filename != ''
   zbar_image = ZBar::Image.new
   zbar_image.set_data(ZBar::Format::Y800, y800_image, png_image.width, png_image.height)
   begin
-    text = URI.unescape(zbar_image.process[0].data)
+    text = CGI.unescape(zbar_image.process[0].data)
   rescue Exception => error
     puts "Couldn't find code in image: #{error}"
     exit 1

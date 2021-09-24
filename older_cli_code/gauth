@@ -1,58 +1,68 @@
-#!/usr/bin/env ruby
+#!/usr/local/ruby/bin/ruby
 require 'keychain'
 require 'clipboard'
 require 'rotp'
 
-#query_user_for_provider_and_account
+# query_user_for_provider_and_account
 # @return [Boolean,] true if we selected an account. False if we cancelled.
 def query_user_for_provider_and_account
   output = []
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator').all.each do |p|
+  Keychain.generic_passwords.where(service: 'Google Authenticator').all.each do |p|
     output << p
   end
-  output.sort_by! { |p| [p.label, p.account] }
+  output.sort_by! { |p| [ p.label, p.account ] }
   list = []
   output.each { |p| list << "#{p.label} #{p.account}" }
 
-  #Selection menu using Applescript.
+  # Selection menu using Applescript.
   key = `osascript -e 'tell application "System Events" to activate' -e 'tell application "System Events" to set keyList to {"#{list.join('","')}"}' -e 'tell application "System Events" to return ( choose from list keyList with title "keys" )'`.chomp
-  
-  return key == 'false' ? [false, '', ''] : [true] + key.split(' ') 
+
+  return key == 'false' ? [ false, '', '' ] : [ true ] + key.split
 end
 
-#Read back the specified google authenticator key from the Mac OS X keychain.
+# Insert the text into the keyboard buffer, so it looks as if we typed it.
+# text [String] text we want to 'type' on the keyboard.
+def output(text:)
+  `osascript -e 'tell application "System Events"' -e 'set activeApp to name of first application process whose frontmost is true' -e 'if "Finder" is not in activeApp then' -e 'tell application activeApp' -e 'keystroke "#{text}"' -e 'end tell' -e 'end if' -e 'end tell'`
+  raise("osascript failed #{$CHILD_STATUS}") if $CHILD_STATUS != 0
+end
+
+# Read back the specified google authenticator key from the Mac OS X keychain.
 #  If the account is unique, then only one argument is needed.
 #  If not, then both the provider name and the account must be passed in as arguments.
 #  (Will get prompted for the users password to access the keychain.)
-#The default provider and account pair is stored in the users home directory in .gauth.
-#Generate the next 2FA key, and put it in the Mac OS X clipboard.
+# The default provider and account pair is stored in the users home directory in .gauth.
+# Generate the next 2FA key, and put it in the Mac OS X clipboard.
 
-case ARGV.length 
-when 1; 
-  account = ARGV[0] 
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account).all.each do |p|
+case ARGV.length
+when 1
+  account = ARGV[0]
+  Keychain.generic_passwords.where(service: 'Google Authenticator', account: account).all.each do |p|
     totp = ROTP::TOTP.new( p.password )
     result = totp.now
-    Clipboard.copy  result
+    Clipboard.copy result
     puts "#{p.label}:#{p.account}: #{result}"
   end
-when 2; 
-  account = ARGV[1] ; label = ARGV[0]
-  Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => label).all.each do |p|
+when 2
+  account = ARGV[1]
+  label = ARGV[0]
+  Keychain.generic_passwords.where(service: 'Google Authenticator', account: account, label: label).all.each do |p|
     totp = ROTP::TOTP.new( p.password )
     result = totp.now
-    Clipboard.copy  result
+    Clipboard.copy result
     puts "#{p.label}:#{p.account}: #{result}"
   end
 else
   selected, provider, account = query_user_for_provider_and_account
   if selected
-    Keychain.generic_passwords.where(:service => 'Google_Authenticator', :account => account, :label => provider).all.each do |p|
+    # rubocop:disable Lint/UnreachableLoop. Yes, I only want to process the first result.
+    Keychain.generic_passwords.where(service: 'Google Authenticator', account: account, label: provider).all.each do |p|
       totp = ROTP::TOTP.new( p.password )
       result = totp.now
-      Clipboard.copy  result
-      puts "#{p.label}:#{p.account}: #{result}"
+      puts "#{p.label}:#{p.account} #{result}"
+      Clipboard.copy result
       break
     end
+    # rubocop:enable Lint/UnreachableLoop
   end
 end
