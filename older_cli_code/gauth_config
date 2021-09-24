@@ -10,10 +10,14 @@ if ARGC != 3
   exit 1
 end
 begin
+  issuer = ARGV[0]
+  issuer = issuer.split('@')[1] if issuer =~ /@/      # Set issuer to the domain part, if it is in the form user@domain style
+  account = "#{ARGV[1].gsub(/@.*$/, '')}@#{issuer}"                    # Set Account to account@issuer, which should be unique.
+
   Keychain.generic_passwords.create(service: 'Google_Authenticator',
                                     password: ARGV[2],
-                                    account: ARGV[1],
-                                    label: ARGV[0]
+                                    account: account,
+                                    label: issuer
                                    )
 rescue Excepton => e
   puts "Failed to create keychain entry: #{e}"
