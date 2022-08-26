@@ -18,7 +18,7 @@ def png_to_y800(image)
   (0...image.height).each do |h|
     (0...image.width).each do |w|
       v = image[w, h]
-      y800 << ((((ChunkyPNG::Color.r(v) * 0.21) + (ChunkyPNG::Color.g(v) * 0.72) + (ChunkyPNG::Color.b(v) * 0.07)).round ) & 0xFF).chr
+      y800 << (((ChunkyPNG::Color.r(v) * 0.21) + (ChunkyPNG::Color.g(v) * 0.72) + (ChunkyPNG::Color.b(v) * 0.07)).round & 0xFF).chr
     end
   end
   return y800
